@@ -4,10 +4,12 @@ import (
 	"time"
 
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 )
 
 type Registry struct {
 	BaseURL       string
+	Type          registrytype.RegistryType
 	SupportsHTTP3 bool
 	Username      string
 	Status        registrystatus.RegistryStatus

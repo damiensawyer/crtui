@@ -5,6 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/ksckaan1/crtui/internal/core/enums/registrystatus"
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 )
 
@@ -12,6 +13,7 @@ type registryResult struct {
 	index         int
 	status        registrystatus.RegistryStatus
 	supportsHTTP3 bool
+	registryType  registrytype.RegistryType
 }
 
 func fetchRegistry(index int, registry *Registry) tea.Cmd {
@@ -24,9 +26,9 @@ func fetchRegistry(index int, registry *Registry) tea.Cmd {
 		ri, err := rc.GetRegistryInfo(ctx)
 		if err != nil {
 			return registryResult{
-				index:         index,
-				status:        registrystatus.Offline,
-				supportsHTTP3: false,
+				index:        index,
+				status:       registrystatus.Offline,
+				registryType: registry.Type,
 			}
 		}
 
@@ -34,6 +36,7 @@ func fetchRegistry(index int, registry *Registry) tea.Cmd {
 			index:         index,
 			status:        ri.Status,
 			supportsHTTP3: ri.SupportsHTTP3,
+			registryType:  ri.Type,
 		}
 	}
 }

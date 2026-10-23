@@ -257,6 +257,7 @@ func (m *RegistryListScreenModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case registryResult:
 		m.registries[msg.index].Status = msg.status
 		m.registries[msg.index].SupportsHTTP3 = msg.supportsHTTP3
+		m.registries[msg.index].Type = msg.registryType
 	}
 
 	var spinnerCmd tea.Cmd

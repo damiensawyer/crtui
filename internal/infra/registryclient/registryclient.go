@@ -78,6 +78,7 @@ func (r *RegistryClient) GetRegistryInfo(ctx context.Context) (*models.Registry,
 
 	registry := &models.Registry{
 		BaseURL:  r.BaseURL,
+		Type:     registrytype.FromURL(r.BaseURL),
 		Username: r.username,
 		Status:   registrystatus.Offline,
 	}
@@ -103,7 +104,41 @@ func (r *RegistryClient) GetRegistryInfo(ctx context.Context) (*models.Registry,
 		return registry, nil
 	}
 
+	// Harbor is self-hosted, so it cannot be identified by hostname. Its
+	// public ping endpoint is unique to Harbor and absent from other
+	// Distribution registries.
+	if registry.Type == registrytype.Docker && registry.Status == registrystatus.Online {
+		switch {
+		case r.isHarbor(ctx):
+			registry.Type = registrytype.Harbor
+		case r.isZot(ctx):
+			registry.Type = registrytype.Zot
+		}
+	}
+
 	return registry, nil
+}
+
+func (r *RegistryClient) isHarbor(ctx context.Context) bool {
+	resp, err := r.client.R().SetContext(ctx).Get("/api/v2.0/ping")
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode() == http.StatusOK && strings.TrimSpace(string(resp.Bytes())) == "Pong"
+}
+
+// isZot probes the OCI extension discovery endpoint, which zot always serves
+// and plain Distribution registries do not implement.
+func (r *RegistryClient) isZot(ctx context.Context) bool {
+	resp, err := r.client.R().SetContext(ctx).Get("/v2/_oci/ext/discover")
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode() == http.StatusOK
 }
 
 func (r *RegistryClient) SetTransport(supportsHTTP3 bool) {

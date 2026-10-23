@@ -11,6 +11,8 @@ import (
 	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 	"github.com/ksckaan1/crtui/internal/infra/dockerhubclient"
 	"github.com/ksckaan1/crtui/internal/infra/githubclient"
+	"github.com/ksckaan1/crtui/internal/infra/harborclient"
+	"github.com/ksckaan1/crtui/internal/infra/quayclient"
 	"github.com/samber/lo"
 )
 
@@ -46,6 +48,38 @@ func (m *RepositoryListScreenModel) fetchRepositoryList() tea.Cmd {
 
 			return repositoryListResult{
 				repositoryList: lo.Map(repositories, func(item dockerhubclient.Repository, _ int) *Repository {
+					return &Repository{
+						Name:       fmt.Sprintf("%s/%s", item.Namespace, item.Name),
+						Visibility: lo.Ternary(item.IsPrivate, "private", "public"),
+					}
+				}),
+				err: err,
+			}
+		}
+
+		if m.registry.Type == registrytype.Harbor {
+			harborClient := harborclient.New(m.registry.URL, m.registry.Username, m.registry.Password)
+
+			repositories, err := harborClient.ListRepositories(ctx)
+
+			return repositoryListResult{
+				repositoryList: lo.Map(repositories, func(item harborclient.Repository, _ int) *Repository {
+					return &Repository{
+						Name:       item.Name,
+						Visibility: item.Visibility,
+					}
+				}),
+				err: err,
+			}
+		}
+
+		if m.registry.Type == registrytype.Quay {
+			quayClient := quayclient.New(m.registry.Username, m.registry.Password)
+
+			repositories, err := quayClient.ListRepositories(ctx)
+
+			return repositoryListResult{
+				repositoryList: lo.Map(repositories, func(item quayclient.Repository, _ int) *Repository {
 					return &Repository{
 						Name:       fmt.Sprintf("%s/%s", item.Namespace, item.Name),
 						Visibility: lo.Ternary(item.IsPrivate, "private", "public"),

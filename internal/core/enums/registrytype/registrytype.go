@@ -11,6 +11,9 @@ const (
 	Docker    RegistryType = "docker"
 	GitHub    RegistryType = "github"
 	DockerHub RegistryType = "dockerhub"
+	Harbor    RegistryType = "harbor"
+	Quay      RegistryType = "quay"
+	Zot       RegistryType = "zot"
 )
 
 // DockerHubRegistryHost is the canonical host that serves the Docker
@@ -35,6 +38,8 @@ func FromURL(rawURL string) RegistryType {
 		return GitHub
 	case "docker.io", "index.docker.io", "registry-1.docker.io", "registry.docker.io":
 		return DockerHub
+	case "quay.io":
+		return Quay
 	default:
 		return Docker
 	}

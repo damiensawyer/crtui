@@ -24,6 +24,9 @@ func TestFromURL(t *testing.T) {
 		{"https://index.docker.io", DockerHub},
 		{"https://docker.io", DockerHub},
 		{"DOCKER.IO", DockerHub},
+		{"https://quay.io", Quay},
+		{"https://quay.io/", Quay},
+		{"QUAY.IO", Quay},
 	}
 
 	for _, tc := range cases {
@@ -43,6 +46,7 @@ func TestNormalize(t *testing.T) {
 		{"https://docker.io", "https://registry-1.docker.io"},
 		{"index.docker.io", "https://registry-1.docker.io"},
 		{"https://ghcr.io", "https://ghcr.io"},
+		{"https://quay.io", "https://quay.io"},
 		{"https://registry.example.com", "https://registry.example.com"},
 		{"http://localhost:5000", "http://localhost:5000"},
 	}

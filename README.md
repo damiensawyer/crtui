@@ -1,6 +1,6 @@
 <img width="300" src="img/logo.png">
 
-A terminal-based TUI tool for managing container registries (`registry:2`, GitHub Container Registry / `ghcr.io`, and Docker Hub). Supports both Docker and Podman credentials.
+A terminal-based TUI tool for managing container registries (`registry:2`, Harbor, Quay, GitHub Container Registry / `ghcr.io`, and Docker Hub). Supports both Docker and Podman credentials.
 
 ## 📋 Table of Contents
 
@@ -32,6 +32,9 @@ A terminal-based TUI tool for managing container registries (`registry:2`, GitHu
 - **Delete Registry**: Remove registry connections from the configuration
 - **Auto-detect Credentials**: Automatically discover and use Docker/Podman credentials from config files, including credentials stored through credential helpers such as `docker-credential-secretservice` (system keychain).
 - **GitHub Container Registry (ghcr.io)**: Browse ghcr.io packages and repositories. Uses the OCI Bearer token auth flow automatically and lists packages through the GitHub API (a fine-grained token with `packages:read` / `read:packages` scope is required to list repositories). Enter the GitHub username/org as the username and the token as the password. Each package is marked with its `PUBLIC`/`PRIVATE` visibility.
+- **Zot**: Self-hosted zot registries are detected automatically through their `/v2/_oci/ext/discover` endpoint and use the generic `/v2/_catalog` listing. Authentication is optional and follows zot's auth configuration (basic auth or API key).
+- **Harbor**: Self-hosted Harbor instances are detected automatically (through their `/api/v2.0/ping` endpoint) and repositories are listed with the Harbor project API, so a system admin account is not needed. Public/private visibility comes from the project metadata. Username and password (or a robot account) are required.
+- **Quay**: Browse `quay.io` repositories. Enter the namespace (user or organization) as the username and an OAuth token as the password. Without a token only public repositories are listed. Public/private visibility comes from the Quay API.
 - **Docker Hub**: Browse Docker Hub image repositories. Docker Hub does not expose a registry catalog endpoint, so repositories are listed through the `hub.docker.com` API. Enter your Docker Hub username (namespace) as the username and a password or access token as the password. Without a password only public repositories are listed (up to Docker Hub's anonymous pagination limit); the Docker Hub entry from Docker/Podman credentials is auto-detected too. Each image is marked with its `PUBLIC`/`PRIVATE` visibility.
 
 ### 📂 Repository & Tag Management
@@ -64,9 +67,12 @@ A terminal-based TUI tool for managing container registries (`registry:2`, GitHu
 
 | Registry | Type | Repo listing | Auth |
 | --- | --- | --- | --- |
-| `registry:2` (self-hosted, Harbor, etc.) | generic | `/v2/_catalog` | Basic / Bearer token |
+| `registry:2` (self-hosted, generic Distribution) | generic | `/v2/_catalog` | Basic / Bearer token |
 | GitHub Container Registry (`ghcr.io`) | OCI | GitHub API (`packages:read`) | GitHub token |
 | Docker Hub (`docker.io`) | OCI | `hub.docker.com` API | username (+ optional token) |
+| Harbor (self-hosted) | generic | Harbor API (`/api/v2.0`) — auto-detected | username + password / robot account |
+| Quay (`quay.io`) | OCI | `quay.io` API | namespace (+ optional token) |
+| Zot (self-hosted) | generic | `/v2/_catalog` — auto-detected | Basic / API key (optional) |
 
 ## 🚀 Quick Start
 

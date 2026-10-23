@@ -17,6 +17,8 @@ import (
 	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 	"github.com/ksckaan1/crtui/internal/infra/dockerhubclient"
 	"github.com/ksckaan1/crtui/internal/infra/githubclient"
+	"github.com/ksckaan1/crtui/internal/infra/harborclient"
+	"github.com/ksckaan1/crtui/internal/infra/quayclient"
 	"github.com/ksckaan1/crtui/internal/infra/registryclient"
 	"github.com/samber/lo"
 )
@@ -250,9 +252,35 @@ func (m *NewOrEditConnectionPopup) validateConnection(url, username, password st
 		if err := dhClient.Validate(context.Background()); err != nil {
 			return fmt.Errorf("docker hub: %w", err)
 		}
+
+	case registrytype.Quay:
+		if username == "" {
+			return errors.New("Quay namespace is required")
+		}
+
+		if password == "" {
+			return nil
+		}
+
+		quayClient := quayclient.New(username, password)
+
+		if err := quayClient.Validate(context.Background()); err != nil {
+			return fmt.Errorf("quay: %w", err)
+		}
 	}
 
 	return nil
+}
+
+// passwordOptional reports whether a registry can be browsed anonymously. Every
+// other registry requires a full username/password pair when auth is enabled.
+func passwordOptional(rawURL string) bool {
+	switch registrytype.FromURL(rawURL) {
+	case registrytype.DockerHub, registrytype.Quay:
+		return true
+	default:
+		return false
+	}
 }
 
 func (m *NewOrEditConnectionPopup) onTest() (tea.Model, tea.Cmd) {
@@ -263,10 +291,10 @@ func (m *NewOrEditConnectionPopup) onTest() (tea.Model, tea.Cmd) {
 	username := m.usernameTextInput.Value()
 	password := m.passwordTextInput.Value()
 
-	isDockerHub := registrytype.FromURL(m.crURLtextInput.Value()) == registrytype.DockerHub
+	passwordOptional := passwordOptional(m.crURLtextInput.Value())
 
 	if m.isAuthRequired.Value() &&
-		(username == "" || (password == "" && !isDockerHub)) {
+		(username == "" || (password == "" && !passwordOptional)) {
 		return m, m.status.SetStatus(ui.Error, "Insert valid username and password")
 	}
 
@@ -298,12 +326,22 @@ func (m *NewOrEditConnectionPopup) onTest() (tea.Model, tea.Cmd) {
 		return m, m.status.SetStatus(ui.Error, "Invalid container registry")
 	}
 
+	if ri.Type == registrytype.Harbor {
+		if err := harborclient.New(m.crURLtextInput.Value(), username, password).Validate(context.Background()); err != nil {
+			return m, m.status.SetStatus(ui.Error, fmt.Sprintf("harbor: %s", err))
+		}
+	}
+
 	if registrytype.FromURL(m.crURLtextInput.Value()) == registrytype.GitHub && password == "" {
 		return m, m.status.SetStatus(ui.Warning, "Connection successful, but a GitHub token is required to list repositories")
 	}
 
 	if registrytype.FromURL(m.crURLtextInput.Value()) == registrytype.DockerHub && password == "" {
 		return m, m.status.SetStatus(ui.Warning, "Connection successful, but only public repositories will be listed without a Docker Hub password")
+	}
+
+	if registrytype.FromURL(m.crURLtextInput.Value()) == registrytype.Quay && password == "" {
+		return m, m.status.SetStatus(ui.Warning, "Connection successful, but only public repositories will be listed without a Quay token")
 	}
 
 	return m, m.status.SetStatus(ui.Info, "Connection successful")
@@ -317,10 +355,10 @@ func (m *NewOrEditConnectionPopup) onCreate() (tea.Model, tea.Cmd) {
 	username := m.usernameTextInput.Value()
 	password := m.passwordTextInput.Value()
 
-	isDockerHub := registrytype.FromURL(m.crURLtextInput.Value()) == registrytype.DockerHub
+	passwordOptional := passwordOptional(m.crURLtextInput.Value())
 
 	if m.isAuthRequired.Value() &&
-		(username == "" || (password == "" && !isDockerHub)) {
+		(username == "" || (password == "" && !passwordOptional)) {
 		return m, m.status.SetStatus(ui.Error, "Insert valid username and password")
 	}
 

@@ -113,6 +113,39 @@ func (d *registryListDelegate) Render(w io.Writer, m list.Model, index int, item
 			Foreground(lipgloss.White).
 			Bold(true).
 			Render("DOCKER HUB")
+
+	case registrytype.Harbor:
+		badges = lipgloss.NewStyle().
+			Padding(0, 1).
+			Background(lipgloss.Color("#0F7B8A")).
+			Foreground(lipgloss.White).
+			Bold(true).
+			Render("HARBOR")
+
+	case registrytype.Quay:
+		badges = lipgloss.NewStyle().
+			Padding(0, 1).
+			Background(lipgloss.Color("#EE0000")).
+			Foreground(lipgloss.White).
+			Bold(true).
+			Render("QUAY")
+
+	case registrytype.Zot:
+		badges = lipgloss.NewStyle().
+			Padding(0, 1).
+			Background(lipgloss.Color("#7B61FF")).
+			Foreground(lipgloss.White).
+			Bold(true).
+			Render("ZOT")
+
+	case registrytype.Docker:
+		// Generic Distribution API. registry:2 cannot be told apart from other
+		// implementations, so the label stays neutral.
+		badges = lipgloss.NewStyle().
+			Padding(0, 1).
+			Background(lipgloss.Color("#444444")).
+			Foreground(lipgloss.White).
+			Render("OCI")
 	}
 
 	if r.AutoDetected {

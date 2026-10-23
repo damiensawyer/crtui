@@ -1,8 +1,13 @@
 package registryclient
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
+	"github.com/ksckaan1/crtui/internal/core/enums/registrytype"
 	"github.com/stretchr/testify/require"
 )
 
@@ -51,4 +56,68 @@ func TestSetTransportNoChange(t *testing.T) {
 
 	err := client.Close()
 	require.NoError(t, err)
+}
+
+func TestGetRegistryInfoDetectsHarbor(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v2/":
+			w.Header().Set("Docker-Distribution-Api-Version", "registry/2.0")
+			w.WriteHeader(http.StatusOK)
+		case "/api/v2.0/ping":
+			fmt.Fprint(w, "Pong")
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	client := New(server.URL, "", "")
+	t.Cleanup(func() { _ = client.Close() })
+
+	info, err := client.GetRegistryInfo(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, registrytype.Harbor, info.Type)
+}
+
+func TestGetRegistryInfoKeepsDockerType(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v2/" {
+			w.Header().Set("Docker-Distribution-Api-Version", "registry/2.0")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	t.Cleanup(server.Close)
+
+	client := New(server.URL, "", "")
+	t.Cleanup(func() { _ = client.Close() })
+
+	info, err := client.GetRegistryInfo(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, registrytype.Docker, info.Type)
+}
+
+func TestGetRegistryInfoDetectsZot(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v2/":
+			w.Header().Set("Docker-Distribution-Api-Version", "registry/2.0")
+			w.WriteHeader(http.StatusOK)
+		case "/v2/_oci/ext/discover":
+			fmt.Fprint(w, `{"extensions":[{"name":"_zot","endpoints":["/v2/_zot/ext/search"]}]}`)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	client := New(server.URL, "", "")
+	t.Cleanup(func() { _ = client.Close() })
+
+	info, err := client.GetRegistryInfo(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, registrytype.Zot, info.Type)
 }
