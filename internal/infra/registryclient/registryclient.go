@@ -96,6 +96,13 @@ func (r *RegistryClient) GetRegistryInfo(ctx context.Context) (*models.Registry,
 		registry.Status = registrystatus.Unauth
 	}
 
+	// Quay always challenges /v2/, even for anonymous pulls, because the
+	// request has no repository scope. Repositories are authorized per scope
+	// on the actual requests, so treat Quay as reachable here.
+	if registry.Type == registrytype.Quay && registry.Status == registrystatus.Unauth {
+		registry.Status = registrystatus.Online
+	}
+
 	registryType := resp.Header().Get("docker-distribution-api-version")
 
 	if registryType != "registry/2.0" {

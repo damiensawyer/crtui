@@ -109,8 +109,10 @@ func (t *authTransport) retryWithChallenge(req *http.Request, unauthorized *http
 
 	token, expiresAt, err := t.fetchToken(req.Context(), realm, params["service"], scope)
 	if err != nil {
-		unauthorized.Body.Close()
-		return nil, fmt.Errorf("registryclient: fetch token: %w", err)
+		// Some registries (e.g. Quay) reject an unscoped token request. Keep
+		// the original 401 so callers can tell an unauthorized request from
+		// an unreachable registry.
+		return unauthorized, nil
 	}
 
 	t.setToken(scope, token, expiresAt)
@@ -141,7 +143,7 @@ func (t *authTransport) fetchToken(ctx context.Context, realm, service, scope st
 	}
 	tokenReq.Header.Set("Accept", "application/json")
 
-	if t.username != "" || t.password != "" {
+	if t.username != "" && t.password != "" {
 		tokenReq.SetBasicAuth(t.username, t.password)
 	}
 

@@ -167,9 +167,13 @@ func TestAuthTransportTokenEndpointFailure(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, server.URL+"/v2/a/b/tags/list", nil)
 	require.NoError(t, err)
 
-	_, err = at.RoundTrip(req)
-	require.Error(t, err)
-	require.Contains(t, err.Error(), "fetch token")
+	resp, err := at.RoundTrip(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	// A rejected token request keeps the original 401 so callers can tell
+	// unauthorized apart from unreachable.
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 }
 
 func TestParseChallenge(t *testing.T) {

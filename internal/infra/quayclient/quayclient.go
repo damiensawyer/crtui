@@ -64,9 +64,8 @@ func (c *Client) ListRepositories(ctx context.Context) ([]Repository, error) {
 	for page := 1; ; page++ {
 		var result listResponse
 
-		resp, err := c.newRequest(ctx).
+		resp, err := c.listRequest(ctx).
 			SetResult(&result).
-			SetQueryParam("namespace", c.namespace).
 			SetQueryParam("limit", fmt.Sprint(pageSize)).
 			SetQueryParam("page", fmt.Sprint(page)).
 			Get("/api/v1/repository")
@@ -104,8 +103,7 @@ func (c *Client) ListRepositories(ctx context.Context) ([]Repository, error) {
 // Validate verifies that the configured namespace exists and that the token is
 // accepted. It stops after the first page.
 func (c *Client) Validate(ctx context.Context) error {
-	resp, err := c.newRequest(ctx).
-		SetQueryParam("namespace", c.namespace).
+	resp, err := c.listRequest(ctx).
 		SetQueryParam("limit", "1").
 		Get("/api/v1/repository")
 	if err != nil {
@@ -125,6 +123,18 @@ func (c *Client) newRequest(ctx context.Context) *resty.Request {
 
 	if c.token != "" {
 		req.SetHeader("Authorization", "Bearer "+c.token)
+	}
+
+	return req
+}
+
+// listRequest scopes the request to the namespace. Quay only returns public
+// repositories anonymously when the public filter is set.
+func (c *Client) listRequest(ctx context.Context) *resty.Request {
+	req := c.newRequest(ctx).SetQueryParam("namespace", c.namespace)
+
+	if c.token == "" {
+		req.SetQueryParam("public", "true")
 	}
 
 	return req

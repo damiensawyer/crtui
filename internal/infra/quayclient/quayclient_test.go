@@ -57,3 +57,20 @@ func TestListRepositoriesUnauthorized(t *testing.T) {
 	_, err := client.ListRepositories(context.Background())
 	require.ErrorContains(t, err, "401")
 }
+
+func TestListRepositoriesAnonymousUsesPublicFilter(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "true", r.URL.Query().Get("public"))
+		require.Empty(t, r.Header.Get("Authorization"))
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"repositories":[{"namespace":"prometheus","name":"prometheus","kind":"image","is_public":true}],"has_additional":false}`)
+	}))
+	t.Cleanup(server.Close)
+
+	client := NewWithBaseURL("prometheus", "", server.URL)
+
+	repos, err := client.ListRepositories(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, []Repository{{Name: "prometheus", Namespace: "prometheus"}}, repos)
+}
