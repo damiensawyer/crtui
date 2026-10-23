@@ -10,6 +10,7 @@ A terminal-based TUI tool for managing container registries (`registry:2`, Harbo
   - [Tag Details \& Inspection](#-tag-details--inspection)
   - [User Experience](#%EF%B8%8F-user-experience)
 - [Supported Registries](#%F0%9F%97%82%EF%B8%8F-supported-registries)
+- [Screenshots](#-screenshots)
 - [Quick Start](#quick-start)
 - [Installation](#installation)
   - [Homebrew](#homebrew-macoslinux)
@@ -73,6 +74,14 @@ A terminal-based TUI tool for managing container registries (`registry:2`, Harbo
 | Harbor (self-hosted) | generic | Harbor API (`/api/v2.0`) — auto-detected | username + password / robot account |
 | Quay (`quay.io`) | OCI | `quay.io` API | namespace (+ optional token) |
 | Zot (self-hosted) | generic | `/v2/_catalog` — auto-detected | Basic / API key (optional) |
+
+## 📸 Screenshots
+
+| Screenshots | |
+| --- | --- |
+| <img src="img/screenshots/01-registry-list.png" alt="Registry list" width="600"><br>Registry list with per-type badges | <img src="img/screenshots/02-dockerhub-repositories.png" alt="Docker Hub repositories" width="600"><br>Docker Hub repositories with visibility |
+| <img src="img/screenshots/03-nginx-tags.png" alt="Tag list" width="600"><br>Tags of `library/nginx` | <img src="img/screenshots/04-tag-details.png" alt="Tag details" width="600"><br>Platforms, labels and environment variables |
+| <img src="img/screenshots/05-tag-details-platform.png" alt="Platform details" width="600"><br>Switching between platforms | <img src="img/screenshots/06-quay-repositories.png" alt="Quay repositories" width="600"><br>Quay namespace repositories |
 
 ## 🚀 Quick Start
 
